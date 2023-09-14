@@ -5,6 +5,8 @@ description = "Wrapper around azure-kusto client to facilitate bringing BIG quer
 authors = ["JJ Triff <jjtriff@gmail.com>"]
 readme = "README.md"
 packages = [{include = "big_query_kusto_client", from = "src"}]
+license = "Apache-2.0"
+homepage = "https://github.com/jjtriff/big-query-kusto-client"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -13,7 +15,6 @@ tenacity = "^8.2.3"
 azure-kusto-data = "^4.2.0"
 
 [project.urls]
-"Homepage" = "https://github.com/jjtriff/big-query-kusto-client"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.2"
