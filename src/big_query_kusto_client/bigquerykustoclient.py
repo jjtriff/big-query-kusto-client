@@ -9,6 +9,7 @@ from azure.kusto.data import (
 from azure.kusto.data._models import KustoResultTable
 from azure.kusto.data.exceptions import KustoError
 from azure.kusto.data.helpers import dataframe_from_result_table
+from tenacity import retry, wait_fixed, stop_after_attempt
 
 ADX_RECORDS_LIMIT = os.getenv('ADX_RECORDS_LIMIT', 500_000)
 ADX_SIZE_IN_BYTES_LIMIT = os.getenv('ADX_SIZE_IN_BYTES_LIMIT', 67_108_864)  # 64MB
@@ -94,6 +95,10 @@ stored_query_result('{prefix}{uuid}')
         paged_response = self._kusto.execute_query(self._db, paged_query)
         return dataframe_from_result_table(paged_response.primary_results[0])
 
+    @retry(
+        wait=wait_fixed(1),
+        stop=stop_after_attempt(3),
+    )
     def _get_totals(self):
         show = """
 .show stored_query_results

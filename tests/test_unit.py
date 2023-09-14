@@ -7,7 +7,7 @@ import pytest
 from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
 from azure.kusto.data.exceptions import KustoError
 
-from bigquerykustoclient import BigQueryKustoClient
+from src.big_query_kusto_client import BigQueryKustoClient
 
 kusto_mock = mock.MagicMock()
 db_name = 'ContosoSales'
