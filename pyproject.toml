@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "big-query-kusto-client"
-version = "0.1.3"
+version = "0.1.4"
 description = "Wrapper around azure-kusto client to facilitate bringing BIG query results while avoiding hitting the limits"
 authors = ["JJ Triff <jjtriff@gmail.com>"]
 readme = "README.md"
@@ -10,9 +10,13 @@ homepage = "https://github.com/jjtriff/big-query-kusto-client"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pandas = "^2.1.0"
+pandas = "^1.5.2"
 tenacity = "^8.2.3"
 azure-kusto-data = "^4.2.0"
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
 
 [project.urls]
 
