@@ -113,7 +113,7 @@ stored_query_result('{prefix}{uuid}')
         total_size = response.primary_results[0].to_dict().get('data')[0].get('SizeInBytes')
         return total_rows, total_size
 
-    def _create_stored_query(self, query: str) -> None | KustoResultTable:
+    def _create_stored_query(self, query: str) -> KustoResultTable:
         # create the new stored query result
         create = """
 .set stored_query_result {prefix}{uuid} with (previewCount = 1) <|{query}
