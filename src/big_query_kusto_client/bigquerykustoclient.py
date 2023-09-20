@@ -46,6 +46,8 @@ class BigQueryKustoClient():
             uuid=self._uuid,
             prefix=self._stored_query_prefix,
         )
+        logging.info("Executing " + drop)
+
         self._kusto.execute_mgmt(self._db, drop)
 
     def execute_query(self, db, query, optimal_page=False) -> pd.DataFrame:
@@ -60,13 +62,14 @@ class BigQueryKustoClient():
 
         total_rows, total_size = self._get_totals()
 
-        return self._get_all_results(
+        results = self._get_all_results(
             total_rows,
-            self._determine_optimal_page_size(
-                total_rows,
-                total_size
-            ) if optimal_page else self._page_size
+            self._determine_optimal_page_size(total_rows, total_size) if optimal_page else self._page_size
         )
+
+        self._drop_stored_query()
+
+        return results
 
     def _get_all_results(self, total_rows, page_size, df=None) -> pd.DataFrame:
         # for the size of the page
@@ -96,7 +99,7 @@ stored_query_result('{prefix}{uuid}')
         return dataframe_from_result_table(paged_response.primary_results[0])
 
     @retry(
-        wait=wait_fixed(1),
+        wait=wait_fixed(5),
         stop=stop_after_attempt(3),
     )
     def _get_totals(self):
