@@ -72,6 +72,20 @@ def test_class_manages_big_query_successfully_optimal(kusto_client: KustoClient)
     assert len(df) == row_total
 
 
+def test_class_manages_repeat_calls_gracefully(kusto_client: KustoClient):
+    row_total = 100
+    df: pandas.DataFrame = None
+    with BigQueryKustoClient(kusto_client) as client:
+        for _ in range(2):
+            df = client.execute_query(
+                db_name,
+                big_query + f'| take {row_total} ' + '| order by DateKey, ProductKey, CustomerKey',
+                optimal_page=True
+            )
+
+    assert len(df) == row_total
+
+
 @pytest.fixture
 def kusto_client() -> KustoClient:
     return KustoClient(

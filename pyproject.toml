@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "big-query-kusto-client"
-version = "0.1.6"
+version = "0.2.0"
 description = "Wrapper around azure-kusto client to facilitate bringing BIG query results while avoiding hitting the limits"
 authors = ["JJ Triff <jjtriff@gmail.com>"]
 readme = "README.md"

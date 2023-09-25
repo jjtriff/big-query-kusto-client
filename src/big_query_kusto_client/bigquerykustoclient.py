@@ -1,15 +1,16 @@
 import logging
 import os
 import uuid
+from datetime import timedelta
 
 import pandas as pd
 from azure.kusto.data import (
     KustoClient,
 )
 from azure.kusto.data._models import KustoResultTable
-from azure.kusto.data.exceptions import KustoError
+from azure.kusto.data.exceptions import KustoError, KustoApiError
 from azure.kusto.data.helpers import dataframe_from_result_table
-from tenacity import retry, wait_fixed, stop_after_attempt
+from tenacity import retry, wait_incrementing, stop_after_attempt
 
 ADX_RECORDS_LIMIT = os.getenv('ADX_RECORDS_LIMIT', 500_000)
 ADX_SIZE_IN_BYTES_LIMIT = os.getenv('ADX_SIZE_IN_BYTES_LIMIT', 67_108_864)  # 64MB
@@ -99,8 +100,8 @@ stored_query_result('{prefix}{uuid}')
         return dataframe_from_result_table(paged_response.primary_results[0])
 
     @retry(
-        wait=wait_fixed(5),
-        stop=stop_after_attempt(3),
+        wait=wait_incrementing(timedelta(seconds=5), increment=timedelta(seconds=5)),
+        stop=stop_after_attempt(6),
     )
     def _get_totals(self):
         show = """
@@ -111,12 +112,24 @@ stored_query_result('{prefix}{uuid}')
             prefix=self._stored_query_prefix,
         )
         # determine the total amount of rows
-        response = self._kusto.execute_mgmt(self._db, show)
-        total_rows = response.primary_results[0].to_dict().get('data')[0].get('RowCount')
-        total_size = response.primary_results[0].to_dict().get('data')[0].get('SizeInBytes')
-        return total_rows, total_size
+        try:
+            logging.debug({'msg': 'Trying to get totals', 'query': show})
+            response = self._kusto.execute_mgmt(self._db, show)
+            total_rows = response.primary_results[0].to_dict().get('data')[0].get('RowCount')
+            total_size = response.primary_results[0].to_dict().get('data')[0].get('SizeInBytes')
+            logging.debug({'msg': 'We got totals', 'query': show})
+            return total_rows, total_size
+        except IndexError as e:
+            logging.error(f'Unable to retrieve the totals for the executed query. Query: {show}')
+            raise
 
     def _create_stored_query(self, query: str) -> KustoResultTable:
+        """
+        Returns None when the result of the query has rows, otherwise
+        an emtpy, yet formatted with columns dataframe, of 0 rows
+        :param query:
+        :return: None | pd.DataFrame
+        """
         # create the new stored query result
         create = """
 .set stored_query_result {prefix}{uuid} with (previewCount = 1) <|{query}
@@ -126,16 +139,21 @@ stored_query_result('{prefix}{uuid}')
             query=query
         )
 
-        response = self._kusto.execute_mgmt(self._db, create)
-        # check we got a preview
-        if 0 == response.primary_results[0].rows_count:
-            logging.info('{classname} found 0 records '
-                         'on the preview of a query. '
-                         'Returning an empty dataframe'
-                         .format(classname=self.__class__.__name__))
-            logging.debug('The query was `{}`'.format(query))
-            return response.primary_results[0]
-        return None
+        try:
+            response = self._kusto.execute_mgmt(self._db, create)
+            # check we got a preview
+            if 0 == response.primary_results[0].rows_count:
+                logging.info('{classname} found 0 records '
+                             'on the preview of a query. '
+                             'Returning an empty dataframe'
+                             .format(classname=self.__class__.__name__))
+                logging.debug('The query was `{}`'.format(query))
+                return response.primary_results[0]
+            return None
+        except KustoApiError as e:
+            if 'already exists' in str(e):
+                return None
+            raise
 
     @staticmethod
     def _determine_optimal_page_size(total_rows, total_size):
