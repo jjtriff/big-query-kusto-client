@@ -5,7 +5,8 @@ from unittest.mock import patch
 import pandas
 import pytest
 from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
-from azure.kusto.data.exceptions import KustoError
+from azure.kusto.data.exceptions import KustoError, KustoAsyncUsageError
+from azure.kusto.data.security import _AadHelper
 
 from src.big_query_kusto_client import BigQueryKustoClient
 
@@ -74,6 +75,7 @@ def test_class_manages_big_query_successfully_optimal(kusto_client: KustoClient)
 
 def test_class_manages_repeat_calls_gracefully(kusto_client: KustoClient):
     row_total = 100
+    # noinspection PyTypeChecker
     df: pandas.DataFrame = None
     with BigQueryKustoClient(kusto_client) as client:
         for _ in range(2):
@@ -91,3 +93,23 @@ def kusto_client() -> KustoClient:
     return KustoClient(
         KustoConnectionStringBuilder.with_interactive_login(os.getenv("KUSTO_URI", 'https://help.kusto.windows.net/'))
     )
+
+
+def test_class_closes_async_kusto_clients_successfully(kusto_client: KustoClient):
+    row_total = 100
+    # noinspection PyTypeChecker
+    df: pandas.DataFrame = None
+    try:
+        with BigQueryKustoClient(kusto_client) as client:
+            for _ in range(2):
+                df = client.execute_query(
+                    db_name,
+                    big_query + f'| take {row_total} ' + '| order by DateKey, ProductKey, CustomerKey',
+                    optimal_page=True
+                )
+
+            kusto_client._aad_helper = _AadHelper(kusto_client._kcsb, True)
+
+        assert len(df) == row_total
+    except KustoAsyncUsageError as e:
+        assert False, "Exception was thrown for async kusto client"

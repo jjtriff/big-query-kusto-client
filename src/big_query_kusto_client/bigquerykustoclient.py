@@ -8,7 +8,7 @@ from azure.kusto.data import (
     KustoClient,
 )
 from azure.kusto.data._models import KustoResultTable
-from azure.kusto.data.exceptions import KustoError, KustoApiError
+from azure.kusto.data.exceptions import KustoError, KustoApiError, KustoAsyncUsageError
 from azure.kusto.data.helpers import dataframe_from_result_table
 from tenacity import retry, wait_incrementing, stop_after_attempt
 
@@ -38,6 +38,10 @@ class BigQueryKustoClient():
             self._kusto.close()
         except KustoError as ex:
             logging.info(ex)
+        except KustoAsyncUsageError:
+            if self._kusto._aad_helper :
+                self._kusto._aad_helper.close_async()
+            self._kusto.close()
 
         if exc_type is not None:
             raise exc_val
