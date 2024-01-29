@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import uuid
@@ -40,7 +41,7 @@ class BigQueryKustoClient():
             logging.info(ex)
         except KustoAsyncUsageError:
             if self._kusto._aad_helper :
-                self._kusto._aad_helper.close_async()
+                asyncio.run(self._kusto._aad_helper.close_async())
             self._kusto.close()
 
         if exc_type is not None:

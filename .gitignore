@@ -5,3 +5,4 @@ dist/
 /Pipfile.lock
 **/__pycache__/
 
+/big-query-kusto-client.iml
