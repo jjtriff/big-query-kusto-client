@@ -11,8 +11,18 @@ from azure.kusto.data.security import _AadHelper
 from src.big_query_kusto_client import BigQueryKustoClient
 
 kusto_mock = mock.MagicMock()
+kusto_client = None
 db_name = 'ContosoSales'
 big_query = 'SalesTable'
+
+
+@pytest.fixture(scope='module', autouse=True)
+def setup_and_teardown():
+    kusto_client = KustoClient(
+        KustoConnectionStringBuilder.with_interactive_login(os.getenv("KUSTO_URI", 'https://help.kusto.windows.net/'))
+    )
+    yield
+    kusto_client.close()
 
 
 @patch.object(BigQueryKustoClient, '__exit__')

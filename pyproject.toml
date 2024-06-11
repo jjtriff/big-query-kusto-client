@@ -12,7 +12,7 @@ homepage = "https://github.com/jjtriff/big-query-kusto-client"
 python = "^3.9"
 pandas = "^1.5.2"
 tenacity = "^8.2.3"
-azure-kusto-data = "^4.2.0"
+azure-kusto-data = {extras = ["aio"], version = "^4.3.1"}
 
 [[tool.poetry.source]]
 name = "PyPI"
