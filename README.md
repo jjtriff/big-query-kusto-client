@@ -46,3 +46,6 @@ BQKC_SQ_PREFIX=BigQueryKustoClient  # A prefix that will be used as namespace fo
 When done so, the pacakge will try to determine the biggest possible size of page
 to use.
 
+## Contributing
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project, including the release process.
